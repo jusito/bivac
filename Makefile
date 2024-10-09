@@ -6,7 +6,7 @@ IMAGE_NAME = docker.io/jusito/bivac
 IMAGE_VERSION = 2.5.1
 
 GO_VERSION = 1.23
-RESTIC_VERSION = v0.17.3
+RESTIC_VERSION = v0.17.1
 
 #ll: lint vet test bivac # triggered? You are welcome to fix it
 all: test bivac
