@@ -1,0 +1,2 @@
+# this Dockerfile is used to have a default build rule in docker hub
+FROM debian
