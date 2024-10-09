@@ -3,6 +3,7 @@ VERSION = $(shell git describe --always --dirty)
 COMMIT_SHA1 = $(shell git rev-parse HEAD)
 BUILD_DATE = $(shell date +%Y-%m-%d)
 IMAGE_NAME = docker.io/jusito/bivac
+IMAGE_VERSION = 2.5.1
 
 GO_VERSION = 1.23
 RESTIC_VERSION = v0.17.3
@@ -21,7 +22,7 @@ release: clean
 	GO_VERSION=$(GO_VERSION) ./scripts/build-release.sh
 
 docker-images: clean
-	@if [ -z "$(IMAGE_NAME)" ]; then echo "IMAGE_NAME cannot be empty."; exit 1; fi
+	@if [ -z "$(IMAGE_NAME)" ] || [ -z "$(IMAGE_VERSION)" ]; then echo "IMAGE_NAME cannot be empty."; exit 1; fi
 	export IMAGE_NAME=$(IMAGE_NAME)
 	# Linux/amd64
 	docker build --no-cache --pull -t $(IMAGE_NAME)-linux-amd64:$(IMAGE_VERSION) \
