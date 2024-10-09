@@ -72,9 +72,9 @@ docker-images: clean
 	docker manifest push $(IMAGE_NAME):$(IMAGE_VERSION)
 
 lint:
-	@GO111MODULE=off go get -u -v golang.org/x/lint/golint
+	go install honnef.co/go/tools/cmd/staticcheck@2024.1
 	@for file in $$(go list ./... | grep -v '_workspace/' | grep -v 'vendor'); do \
-		export output="$$(golint $${file} | grep -v 'type name will be used as docker.DockerInfo')"; \
+		export output="$$(staticcheck $${file})"; \
 		[ -n "$${output}" ] && echo "$${output}" && export status=1; \
 	done; \
 	exit $${status:-0}
