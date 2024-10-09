@@ -1,3 +1,8 @@
+## Important
+
+I just focus on keeping Restic and the Docker image up to date. I have no knowledge of Go, so I didn't touch it except for dependencies. This project has no priority but pull requests are welcome.
+
+## Original
 Bivac : Backup Interface for Volumes Attached to Containers
 ===========================================================
 

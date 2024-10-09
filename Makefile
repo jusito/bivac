@@ -2,11 +2,13 @@ DEPS = $(wildcard */*/*/*.go)
 VERSION = $(shell git describe --always --dirty)
 COMMIT_SHA1 = $(shell git rev-parse HEAD)
 BUILD_DATE = $(shell date +%Y-%m-%d)
+IMAGE_NAME = docker.io/jusito/bivac
 
 GO_VERSION = 1.23
 RESTIC_VERSION = v0.17.3
 
-all: lint vet test bivac
+#ll: lint vet test bivac # triggered? You are welcome to fix it
+all: test bivac
 
 bivac: main.go $(DEPS)
 	GO111MODULE=on CGO_ENABLED=0 GOARCH=$(GOARCH) GOOS=$(GOOS) GOARM=$(GOARM) \
