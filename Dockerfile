@@ -11,9 +11,10 @@ ENV GOARCH ${GOARCH}
 ENV GOARM ${GOARM}
 
 # RClone
+ARG RCLONE_VERSION
 RUN git clone https://github.com/rclone/rclone /go/src/github.com/rclone/rclone
 WORKDIR /go/src/github.com/rclone/rclone
-RUN git checkout v1.54.0
+RUN git checkout "${RCLONE_VERSION}"
 RUN go get ./...
 RUN env ${BUILD_OPTS} go build
 
