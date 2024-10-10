@@ -21,9 +21,9 @@ set -euo pipefail
     errors=()
     for baseimage_tag_suffix in "-bookworm" "-alpine"; do
         successfull=()
-        cmd_baseimage=("${cmd}" --build-arg "GO_VERSION=$GO_VERSION${baseimage_tag_suffix}")
+        cmd_baseimage=("${cmd[@]}" --build-arg "GO_VERSION=$GO_VERSION${baseimage_tag_suffix}")
         for config in "${configurations[@]}"; do
-            current_cmd=("${cmd_baseimage[@]}" )
+            current_cmd=("${cmd_baseimage[@]}")
 
             mapfile -t args < <(echo "$config" | tr ':' '\n')
             current_variant=""
