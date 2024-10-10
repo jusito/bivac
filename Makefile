@@ -3,9 +3,10 @@ VERSION = $(shell git describe --always --dirty)
 COMMIT_SHA1 = $(shell git rev-parse HEAD)
 BUILD_DATE = $(shell date +%Y-%m-%d)
 IMAGE_NAME = docker.io/jusito/bivac
-IMAGE_VERSION = 2.5.1
+BIVAC_VERSION = 2.5.1
 
 GO_VERSION = 1.23
+RCLONE_VERSION = v1.68.1
 RESTIC_VERSION = v0.17.1
 
 #ll: lint vet test bivac # triggered? You are welcome to fix it
@@ -22,57 +23,7 @@ release: clean
 	GO_VERSION=$(GO_VERSION) ./scripts/build-release.sh
 
 docker-images: clean
-	@if [ -z "$(IMAGE_NAME)" ] || [ -z "$(IMAGE_VERSION)" ]; then echo "IMAGE_NAME cannot be empty."; exit 1; fi
-	export IMAGE_NAME=$(IMAGE_NAME)
-	# Linux/amd64
-	docker build --no-cache --pull -t $(IMAGE_NAME):$(IMAGE_VERSION)-linux-amd64 \
-		--build-arg GO_VERSION=$(GO_VERSION) \
-		--build-arg GOOS=linux \
-		--build-arg GOARCH=amd64 \
-		--build-arg RESTIC_VERSION=$(RESTIC_VERSION)  \
-		.
-	docker push $(IMAGE_NAME):$(IMAGE_VERSION)-linux-amd64
-	# Linux/386
-	docker build --no-cache --pull -t $(IMAGE_NAME):$(IMAGE_VERSION)-linux-386 \
-		--build-arg GO_VERSION=${GO_VERSION} \
-		--build-arg GOOS=linux \
-		--build-arg GOARCH=386 \
-		--build-arg RESTIC_VERSION=$(RESTIC_VERSION) \
-		.
-	docker push $(IMAGE_NAME):$(IMAGE_VERSION)-linux-386
-	# Linux/arm
-	docker build --no-cache --pull -t $(IMAGE_NAME):$(IMAGE_VERSION)-linux-arm \
-		--build-arg GO_VERSION=${GO_VERSION} \
-		--build-arg GOOS=linux \
-		--build-arg GOARCH=arm \
-		--build-arg GOARM=7 \
-		--build-arg RESTIC_VERSION=$(RESTIC_VERSION) \
-		.
-	docker push $(IMAGE_NAME):$(IMAGE_VERSION)-linux-arm
-	# Linux/arm64
-	docker build --no-cache --pull -t $(IMAGE_NAME):$(IMAGE_VERSION)-linux-arm64 \
-		--build-arg GO_VERSION=${GO_VERSION} \
-		--build-arg GOOS=linux \
-		--build-arg GOARCH=arm64 \
-		--build-arg GOARM=7 \
-		--build-arg RESTIC_VERSION=$(RESTIC_VERSION) \
-		.
-	docker push $(IMAGE_NAME):$(IMAGE_VERSION)-linux-arm64
-	# Manifest
-	docker manifest create $(IMAGE_NAME):$(IMAGE_VERSION) \
-		$(IMAGE_NAME):$(IMAGE_VERSION)-linux-amd64 \
-		$(IMAGE_NAME):$(IMAGE_VERSION)-linux-386 \
-		$(IMAGE_NAME):$(IMAGE_VERSION)-linux-arm \
-		$(IMAGE_NAME):$(IMAGE_VERSION)-linux-arm64
-	docker manifest annotate $(IMAGE_NAME):$(IMAGE_VERSION) \
-		$(IMAGE_NAME):$(IMAGE_VERSION)-linux-amd64 --os linux --arch amd64
-	docker manifest annotate $(IMAGE_NAME):$(IMAGE_VERSION) \
-		$(IMAGE_NAME):$(IMAGE_VERSION)-linux-386 --os linux --arch 386
-	docker manifest annotate $(IMAGE_NAME):$(IMAGE_VERSION) \
-		$(IMAGE_NAME):$(IMAGE_VERSION)-linux-arm --os linux --arch arm
-	docker manifest annotate $(IMAGE_NAME):$(IMAGE_VERSION) \
-		$(IMAGE_NAME):$(IMAGE_VERSION)-linux-arm64 --os linux --arch arm64
-	docker manifest push $(IMAGE_NAME):$(IMAGE_VERSION)
+	bash scripts/build-docker.sh "$(IMAGE_NAME)" "$(BIVAC_VERSION)" "$(GO_VERSION)" "$(RCLONE_VERSION)" "$(RESTIC_VERSION)"
 
 lint:
 	go install honnef.co/go/tools/cmd/staticcheck@2024.1
