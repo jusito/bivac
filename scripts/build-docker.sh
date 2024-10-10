@@ -52,6 +52,7 @@ set -euo pipefail
             os="${os/-*}"
             arch_start=$((os_start+${#os}+1))
             arch="${image:$arch_start}"
+            arch="${arch/-*}"
             cmd=(docker manifest annotate "$merged_name" "$image" --os "$os" --arch "$arch")
             echo "${cmd[@]}"
             if "${cmd[@]}"; then
