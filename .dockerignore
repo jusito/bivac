@@ -1,0 +1,7 @@
+.github
+.local
+contrib
+hooks
+img
+test
+*.md
