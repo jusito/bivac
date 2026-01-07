@@ -15,13 +15,18 @@ set -euo pipefail
         "GOOS=linux:GOARCH=arm:GOARM=7"
         "GOOS=linux:GOARCH=arm64:GOARM=7"
     )
+    baseimage_configs=(
+        # "debian:bookworm-slim|-bookworm-slim"
+        "alpine:3.23|-alpine"
+    )
 
     cd "$(dirname "$0")/.."
     cmd=(docker build --no-cache --pull --build-arg RCLONE_VERSION="${RCLONE_VERSION}" --build-arg "RESTIC_VERSION=${RESTIC_VERSION}")
     errors=()
-    for baseimage_tag_suffix in "-bookworm" "-alpine"; do
+    for baseimage_config in "${baseimage_configs[@]}"; do
+        IFS="|" read -r baseimage_runtime baseimage_tag_suffix < <(echo "$baseimage_config")
         successfull=()
-        cmd_baseimage=("${cmd[@]}" --build-arg "GO_VERSION=$GO_VERSION${baseimage_tag_suffix}")
+        cmd_baseimage=("${cmd[@]}" --build-arg "GO_VERSION=$GO_VERSION-alpine" --build-arg "RUNTIME_IMAGE=$baseimage_runtime")
         for config in "${configurations[@]}"; do
             current_cmd=("${cmd_baseimage[@]}")
 
@@ -40,6 +45,7 @@ set -euo pipefail
                 successfull+=("$current_image")
             else
                 errors+=("${current_cmd[*]}")
+                exit 100
             fi
         done
         
@@ -55,13 +61,13 @@ set -euo pipefail
             arch="${arch/-*}"
             cmd=(docker manifest annotate "$merged_name" "$image" --os "$os" --arch "$arch")
             echo "${cmd[@]}"
-            if "${cmd[@]}"; then
-                docker push "$current_image"
-            else
-                errors+=("${cmd[*]}")
-            fi
+            # if "${cmd[@]}"; then
+            #     docker push "$current_image"
+            # else
+            #     errors+=("${cmd[*]}")
+            # fi
         done
-        docker manifest push "$merged_name"
+        # docker manifest push "$merged_name"
     done
 
     if [ "${#errors[@]}" -gt 0 ]; then

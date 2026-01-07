@@ -5,9 +5,9 @@ BUILD_DATE = $(shell date +%Y-%m-%d)
 IMAGE_NAME = docker.io/jusito/bivac
 BIVAC_VERSION = 2.5.1
 
-GO_VERSION = 1.23
-RCLONE_VERSION = v1.68.1
-RESTIC_VERSION = v0.17.1
+GO_VERSION = 1.25
+RCLONE_VERSION = v1.72.1
+RESTIC_VERSION = v0.18.1
 
 #ll: lint vet test bivac # triggered? You are welcome to fix it
 all: test bivac

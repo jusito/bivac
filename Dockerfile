@@ -1,5 +1,12 @@
 ARG GO_VERSION
+ARG RUNTIME_IMAGE
 FROM golang:${GO_VERSION} as builder
+
+COPY scripts/build/* /usr/local/bin
+RUN (apt-get update && apt-get install git make) \
+    || (apk update && apk add git make); \
+    git config --global advice.detachedHead false; \
+    chmod +x /usr/local/bin/*
 
 ARG GOOS
 ARG GOARCH
@@ -10,31 +17,34 @@ ENV GOOS ${GOOS}
 ENV GOARCH ${GOARCH}
 ENV GOARM ${GOARM}
 
-# RClone
+# Rclone
 ARG RCLONE_VERSION
-RUN git clone https://github.com/rclone/rclone /go/src/github.com/rclone/rclone
 WORKDIR /go/src/github.com/rclone/rclone
-RUN git checkout "${RCLONE_VERSION}"
-RUN go get ./...
-RUN env ${BUILD_OPTS} go build
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    build_rclone.sh "$RCLONE_VERSION" "${BUILD_OPTS:-}"
 
 # Restic
-RUN git clone https://github.com/restic/restic /go/src/github.com/restic/restic
 WORKDIR /go/src/github.com/restic/restic
 ARG RESTIC_VERSION
-RUN git checkout ${RESTIC_VERSION}
-RUN go get ./...
-RUN GOOS= GOARCH= GOARM= go run -mod=vendor build.go || go run build.go
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    build_restic.sh "$RESTIC_VERSION" "${BUILD_OPTS:-}"
 
 # Bivac
 WORKDIR /go/src/github.com/camptocamp/bivac
 COPY . .
-RUN env ${BUILD_OPTS} make bivac
+RUN env ${BUILD_OPTS:-} make bivac
 
-FROM debian
-RUN apt-get update && \
-    apt-get install -y openssh-client procps && \
-    rm -rf /var/lib/apt/lists/*
+FROM "$RUNTIME_IMAGE"
+RUN set -eux; \
+    if apt --version; then \
+        apt-get update; \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openssh-client procps; \
+        rm -rf /var/lib/apt/lists/*; \
+    else \
+        apk add --no-cache openssh; \
+    fi;
 COPY --from=builder /etc/ssl /etc/ssl
 COPY --from=builder /go/src/github.com/camptocamp/bivac/bivac /bin/bivac
 COPY --from=builder /go/src/github.com/camptocamp/bivac/providers-config.default.toml /
