@@ -3,15 +3,18 @@
 set -eux
 
 RESTIC_VERSION="$1"
-# BUILD_OPTS="$2" # unused?
+BUILD_DATE="$2"
+TARGET="${3:-"/go/src/github.com/restic/restic"}"
+BUILD_OPTS="-s -w -X 'main.version=$RESTIC_VERSION' -X 'main.buildDate=$BUILD_DATE' -X 'main.commitSha1=$(git rev-parse HEAD)'"
 
-git clone --branch "${RESTIC_VERSION}" --depth 1 "https://github.com/restic/restic" /go/src/github.com/restic/restic
-go mod download
-RETRACTED=$(go list -mod=mod -m -retracted -f '{{if .Retracted}}{{.Path}}@{{.Version}}{{end}}' all)
-if [ -n "${RETRACTED:-}" ]; then
-    echo "FAILED: Retracted modules found: $RETRACTED"
-    # exit 1
-fi
-if ! GOOS= GOARCH= GOARM= go run -mod=vendor build.go; then
+(
+    script_dir=$(realpath "$(dirname "$0")")
+    if [ -d "$TARGET" ]; then
+        find "${TARGET:?}" -mindepth 1 -maxdepth 1 -exec rm -rf "{}" \;
+    fi
+    git clone --branch "${RESTIC_VERSION}" --depth 1 "https://github.com/restic/restic" "$TARGET"
+    cd "$TARGET"
+    "$script_dir/check_retracted.sh" "Restic" "$RESTIC_VERSION"
+
     go run build.go
-fi
+)
