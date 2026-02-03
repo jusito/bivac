@@ -1,12 +1,11 @@
-ARG GO_VERSION
-ARG RUNTIME_IMAGE
-FROM golang:${GO_VERSION} as builder
+ARG GO_VERSION=1.25
+ARG ALPINE_VERSION=3.23
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
 
-COPY scripts/build/* /usr/local/bin
-RUN (apt-get update && apt-get install git make) \
-    || (apk update && apk add git make); \
-    git config --global advice.detachedHead false; \
-    chmod +x /usr/local/bin/*
+COPY --chmod=555 scripts/build/* /usr/local/bin
+RUN set -eux; \
+    apk add --no-cache git make; \
+    git config --global advice.detachedHead false
 
 ARG GOOS
 ARG GOARCH
@@ -22,21 +21,21 @@ ARG RCLONE_VERSION
 WORKDIR /go/src/github.com/rclone/rclone
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    build_rclone.sh "$RCLONE_VERSION" "${BUILD_OPTS:-}"
+    build_rclone.sh "$RCLONE_VERSION" "$(date +"%y.%m.%d-%T")"
 
 # Restic
 WORKDIR /go/src/github.com/restic/restic
 ARG RESTIC_VERSION
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    build_restic.sh "$RESTIC_VERSION" "${BUILD_OPTS:-}"
+    build_restic.sh "$RESTIC_VERSION" "$(date +"%y.%m.%d-%T")"
 
 # Bivac
 WORKDIR /go/src/github.com/camptocamp/bivac
 COPY . .
 RUN env ${BUILD_OPTS:-} make bivac
 
-FROM "$RUNTIME_IMAGE"
+FROM "alpine:$ALPINE_VERSION"
 RUN set -eux; \
     if apt --version; then \
         apt-get update; \

@@ -5,7 +5,7 @@ set -eux
 RESTIC_VERSION="$1"
 BUILD_DATE="$2"
 TARGET="${3:-"/go/src/github.com/restic/restic"}"
-BUILD_OPTS="-s -w -X 'main.version=$RESTIC_VERSION' -X 'main.buildDate=$BUILD_DATE' -X 'main.commitSha1=$(git rev-parse HEAD)'"
+
 
 (
     script_dir=$(realpath "$(dirname "$0")")
@@ -14,7 +14,7 @@ BUILD_OPTS="-s -w -X 'main.version=$RESTIC_VERSION' -X 'main.buildDate=$BUILD_DA
     fi
     git clone --branch "${RESTIC_VERSION}" --depth 1 "https://github.com/restic/restic" "$TARGET"
     cd "$TARGET"
-    "$script_dir/check_retracted.sh" "Restic" "$RESTIC_VERSION"
-
+    
+    BUILD_OPTS="-s -w -X 'main.version=$RESTIC_VERSION' -X 'main.buildDate=$BUILD_DATE' -X 'main.commitSha1=$(git rev-parse HEAD)'"
     go run build.go
 )

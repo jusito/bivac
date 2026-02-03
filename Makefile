@@ -20,8 +20,16 @@ all: check lint vet clean test
 # Check for retracted packages
 check:
 	scripts/build/check_retracted.sh "Bivac" "current"
-	scripts/build/build_rclone.sh $(RCLONE_VERSION) $(BUILD_DATE) ".local/rclone"
-	scripts/build/build_restic.sh $(RESTIC_VERSION) $(BUILD_DATE) ".local/restic"
+
+	scripts/build/build_rclone.sh "$(RCLONE_VERSION)" "$(BUILD_DATE)" ".local/rclone"
+	cd .local/rclone
+	scripts/build/check_retracted.sh "RClone" "$(RCLONE_VERSION)"
+	cd ../..
+
+	scripts/build/build_restic.sh "$(RESTIC_VERSION)" "$(BUILD_DATE)" ".local/restic"
+	cd .local/restic
+	scripts/build/check_retracted.sh "Restic" "$(RESTIC_VERSION)"
+
 	echo "checked!"
 
 lint:

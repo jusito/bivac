@@ -23,52 +23,52 @@ set -euo pipefail
     cd "$(dirname "$0")/.."
     cmd=(docker build --no-cache --pull --build-arg RCLONE_VERSION="${RCLONE_VERSION}" --build-arg "RESTIC_VERSION=${RESTIC_VERSION}")
     errors=()
-    for baseimage_config in "${baseimage_configs[@]}"; do
-        IFS="|" read -r baseimage_runtime baseimage_tag_suffix < <(echo "$baseimage_config")
-        successfull=()
-        cmd_baseimage=("${cmd[@]}" --build-arg "GO_VERSION=$GO_VERSION-alpine" --build-arg "RUNTIME_IMAGE=$baseimage_runtime")
-        for config in "${configurations[@]}"; do
-            current_cmd=("${cmd_baseimage[@]}")
 
-            mapfile -t args < <(echo "$config" | tr ':' '\n')
-            current_variant=""
-            for arg in "${args[@]}"; do
-                current_cmd+=(--build-arg "$arg")
-                current_variant+="-${arg#*=}"
-            done
+    successfull=()
+    cmd_baseimage=("${cmd[@]}" --build-arg "GO_VERSION=$GO_VERSION")
+    for config in "${configurations[@]}"; do
+        current_cmd=("${cmd_baseimage[@]}")
 
-            current_image="${IMAGE_NAME}:${BIVAC_VERSION}${current_variant}${baseimage_tag_suffix}"
-            current_cmd+=(-t "${current_image}" .)
-
-            echo "${current_cmd[@]}"
-            if "${current_cmd[@]}"; then
-                successfull+=("$current_image")
-            else
-                errors+=("${current_cmd[*]}")
-                exit 100
-            fi
+        mapfile -t args < <(echo "$config" | tr ':' '\n')
+        current_variant=""
+        for arg in "${args[@]}"; do
+            current_cmd+=(--build-arg "$arg")
+            current_variant+="-${arg#*=}"
         done
-        
-        merged_name="${IMAGE_NAME}:${BIVAC_VERSION}${baseimage_tag_suffix}"
-        echo docker manifest create "$merged_name" "${successfull[@]}"
 
-        for image in "${successfull[@]}"; do
-            os_start=$((${#IMAGE_NAME}+1+${#BIVAC_VERSION}+1))
-            os="${image:$os_start}"
-            os="${os/-*}"
-            arch_start=$((os_start+${#os}+1))
-            arch="${image:$arch_start}"
-            arch="${arch/-*}"
-            cmd=(docker manifest annotate "$merged_name" "$image" --os "$os" --arch "$arch")
-            echo "${cmd[@]}"
-            # if "${cmd[@]}"; then
-            #     docker push "$current_image"
-            # else
-            #     errors+=("${cmd[*]}")
-            # fi
-        done
-        # docker manifest push "$merged_name"
+        current_image="${IMAGE_NAME}:${BIVAC_VERSION}${current_variant}-alpine"
+        current_cmd+=(-t "${current_image}" .)
+
+        echo "${current_cmd[@]}"
+        if "${current_cmd[@]}"; then
+            successfull+=("$current_image")
+        else
+            errors+=("${current_cmd[*]}")
+        fi
     done
+    
+    exit 100
+    merged_name="${IMAGE_NAME}:${BIVAC_VERSION}${baseimage_tag_suffix}"
+    echo docker manifest create "$merged_name" "${successfull[@]}"
+
+    for image in "${successfull[@]}"; do
+        os_start=$((${#IMAGE_NAME}+1+${#BIVAC_VERSION}+1))
+        os="${image:$os_start}"
+        os="${os/-*}"
+        arch_start=$((os_start+${#os}+1))
+        arch="${image:$arch_start}"
+        arch="${arch/-*}"
+        cmd=(docker manifest annotate "$merged_name" "$image" --os "$os" --arch "$arch")
+        echo "${cmd[@]}"
+        if "${cmd[@]}"; then
+            echo "$image" >> .local/successfull.log
+            # docker push "$current_image"
+        else
+            echo "$image" >> .local/failed.log
+            # errors+=("${cmd[*]}")
+        fi
+    done
+    docker manifest push "$merged_name"
 
     if [ "${#errors[@]}" -gt 0 ]; then
         echo "ERROR following commands failed, see logs for details:"
