@@ -10,3 +10,4 @@ coverage
 release/
 .local
 vendor
+**/.images.list

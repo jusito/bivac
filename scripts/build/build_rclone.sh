@@ -15,6 +15,6 @@ TARGET="${3:-"/go/src/github.com/rclone/rclone"}"
     git clone --branch "$RCLONE_VERSION" --depth 1 "https://github.com/rclone/rclone" "$TARGET"
     cd "$TARGET"
 
-    BUILD_OPTS="-s -w -X 'main.version=$RCLONE_VERSION' -X 'main.buildDate=$BUILD_DATE' -X 'main.commitSha1=$(git rev-parse HEAD)'"
+    BUILD_OPTS="-s -w -X 'main.version=$RCLONE_VERSION' -X 'main.buildDate=$BUILD_DATE' -X 'main.commitSha1=$(git log -1 --format=%H)'"
     CGO_ENABLED=0 go build -ldflags="$BUILD_OPTS"
 )

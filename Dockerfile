@@ -7,9 +7,9 @@ RUN set -eux; \
     apk add --no-cache git make; \
     git config --global advice.detachedHead false
 
-ARG GOOS
-ARG GOARCH
-ARG GOARM
+ARG GOOS=linux
+ARG GOARCH=amd64
+ARG GOARM=7
 
 ENV GO111MODULE=on
 ENV GOOS=${GOOS}
@@ -33,17 +33,11 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 # Bivac
 WORKDIR /go/src/github.com/camptocamp/bivac
 COPY . .
-RUN env ${BUILD_OPTS:-} make bivac
+RUN make bivac
 
 FROM "alpine:$ALPINE_VERSION"
 RUN set -eux; \
-    if apt --version; then \
-        apt-get update; \
-        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openssh-client procps; \
-        rm -rf /var/lib/apt/lists/*; \
-    else \
-        apk add --no-cache openssh; \
-    fi;
+    apk add --no-cache openssh
 COPY --from=builder /etc/ssl /etc/ssl
 COPY --from=builder /go/src/github.com/camptocamp/bivac/bivac /bin/bivac
 COPY --from=builder /go/src/github.com/camptocamp/bivac/providers-config.default.toml /

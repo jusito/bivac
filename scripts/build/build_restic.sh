@@ -15,6 +15,6 @@ TARGET="${3:-"/go/src/github.com/restic/restic"}"
     git clone --branch "${RESTIC_VERSION}" --depth 1 "https://github.com/restic/restic" "$TARGET"
     cd "$TARGET"
     
-    BUILD_OPTS="-s -w -X 'main.version=$RESTIC_VERSION' -X 'main.buildDate=$BUILD_DATE' -X 'main.commitSha1=$(git rev-parse HEAD)'"
+    BUILD_OPTS="-s -w -X 'main.version=$RESTIC_VERSION' -X 'main.buildDate=$BUILD_DATE' -X 'main.commitSha1=$(git log -1 --format=%H)'"
     go run build.go
 )

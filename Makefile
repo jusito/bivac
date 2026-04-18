@@ -43,13 +43,27 @@ test:
 	go test -cover -v ./...
 
 bivac: main.go $(wildcard */*/*/*.go)
-	CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o bivac main.go
+	CGO_ENABLED=0 GOARCH=$(GOARCH) GOOS=$(GOOS) GOARM=$(GOARM) go build -ldflags="$(LDFLAGS)" -o bivac main.go
 
 release: clean
 	GO_VERSION=$(GO_VERSION) ./scripts/build-release.sh
 
+.PHONY: docker-amd64 docker-arm docker-arm64 docker-386
+
 docker-images: clean
-	bash scripts/build-docker.sh "$(IMAGE_NAME)" "$(BIVAC_VERSION)" "$(GO_VERSION)" "$(RCLONE_VERSION)" "$(RESTIC_VERSION)"
+	bash scripts/build-manifest.sh "$(IMAGE_NAME)" "$(BIVAC_VERSION)" "$(GO_VERSION)" "$(RCLONE_VERSION)" "$(RESTIC_VERSION)"
+
+docker-amd64: clean
+	bash scripts/build-docker.sh "$(IMAGE_NAME)" "$(BIVAC_VERSION)" "$(GO_VERSION)" "$(RCLONE_VERSION)" "$(RESTIC_VERSION)" amd64
+
+docker-arm: clean
+	bash scripts/build-docker.sh "$(IMAGE_NAME)" "$(BIVAC_VERSION)" "$(GO_VERSION)" "$(RCLONE_VERSION)" "$(RESTIC_VERSION)" arm 7
+
+docker-arm64: clean
+	bash scripts/build-docker.sh "$(IMAGE_NAME)" "$(BIVAC_VERSION)" "$(GO_VERSION)" "$(RCLONE_VERSION)" "$(RESTIC_VERSION)" arm64 7
+
+docker-386: clean
+	bash scripts/build-docker.sh "$(IMAGE_NAME)" "$(BIVAC_VERSION)" "$(GO_VERSION)" "$(RCLONE_VERSION)" "$(RESTIC_VERSION)" 386
 
 clean:
 	rm -f bivac coverage
