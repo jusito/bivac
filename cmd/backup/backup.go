@@ -47,7 +47,8 @@ var backupCmd = &cobra.Command{
 		}
 
 		for _, a := range args {
-			for _, v := range volumes {
+			for i := range volumes {
+				v := &volumes[i]
 				if v.ID == a {
 					tbl, err := prettytable.NewTable([]prettytable.Column{
 						{},

@@ -52,7 +52,8 @@ var volumesCmd = &cobra.Command{
 			}
 			tbl.Separator = "\t"
 
-			for _, v := range volumes {
+			for i := range volumes {
+				v := &volumes[i]
 				tbl.AddRow(v.ID, v.Name, v.Hostname, v.Mountpoint, v.LastBackupDate, v.LastBackupStatus, strconv.FormatBool(v.BackingUp))
 			}
 
@@ -61,7 +62,8 @@ var volumesCmd = &cobra.Command{
 		}
 
 		for _, a := range args {
-			for _, v := range volumes {
+			for i := range volumes {
+				v := &volumes[i]
 				if v.ID == a {
 					tbl, err := prettytable.NewTable([]prettytable.Column{
 						{},
