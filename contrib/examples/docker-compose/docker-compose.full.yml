@@ -1,0 +1,83 @@
+version: "3.8"
+
+services:
+  bivac-s3:
+    image: ghcr.io/jusito/bivac:latest
+    command: manager
+    profiles: ["s3"]
+    ports:
+      - "8182:8182"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      # Core
+      BIVAC_ORCHESTRATOR: docker # Orchestrator to use.
+      BIVAC_TARGET_URL: s3:my-bucket/bivac # Restic repository target prefix.
+      RESTIC_PASSWORD: change-me # Restic repository encryption password.
+      BIVAC_SERVER_PSK: change-me-too # Pre-shared key for the manager API.
+      # BIVAC_SERVER_ADDRESS: 0.0.0.0:8182 # Manager API bind address.
+      # BIVAC_VERBOSE: "false" # Enable verbose manager logs with command "manager -v".
+
+      # Docker
+      # BIVAC_DOCKER_ENDPOINT: unix:///var/run/docker.sock # Docker API endpoint.
+      # BIVAC_DOCKER_NETWORK: bridge # Network used for temporary agent containers.
+
+      # Kubernetes, only useful when BIVAC_ORCHESTRATOR is kubernetes.
+      # KUBERNETES_NAMESPACE: "" # Namespace to watch when not watching all namespaces.
+      # KUBERNETES_ALL_NAMESPACES: "false" # Watch PVCs across all namespaces.
+      # KUBERNETES_KUBECONFIG: "" # Path to kubeconfig when running outside a cluster.
+      # KUBERNETES_AGENT_SERVICE_ACCOUNT: "" # Service account for temporary agent pods.
+      # KUBERNETES_AGENT_LABELS: app=bivac # Comma-separated labels for agent pods.
+      # KUBERNETES_AGENT_ANNOTATIONS: "" # Comma-separated annotations for agent pods.
+
+      # Backup behavior
+      # BIVAC_RETRY_COUNT: "0" # Retry count for Bivac backup failures.
+      # BIVAC_PARALLEL_COUNT: "2" # Number of agents to run in parallel.
+      # BIVAC_REFRESH_RATE: 10m # Volume list refresh rate.
+      # BIVAC_BACKUP_INTERVAL: 23h # Interval between automatic backups.
+      # RESTIC_FORGET_ARGS: --group-by host --keep-daily 15 --prune # Restic retention command arguments.
+      # BIVAC_LOG_SERVER: "" # Manager URL for agent log callbacks.
+      # BIVAC_AGENT_IMAGE: "" # Agent image; empty means derive it from the manager version.
+      # BIVAC_PROVIDERS_CONFIG: /providers-config.default.toml # Provider TOML path.
+
+      # Volume filters
+      # BIVAC_WHITELIST: "" # Comma-separated volume names to include.
+      # BIVAC_VOLUMES_WHITELIST: "" # Alias for BIVAC_WHITELIST.
+      # BIVAC_BLACKLIST: "" # Comma-separated volume names to exclude.
+      # BIVAC_VOLUMES_BLACKLIST: "" # Alias for BIVAC_BLACKLIST.
+      # BIVAC_WHITELIST_ANNOTATION: "false" # Kubernetes bivac.backup annotation behavior.
+
+      # Restic backend environment starts here.
+      # Bivac does not interpret these variables; it passes them through to the
+      # temporary Restic agent. See:
+      # https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html
+      AWS_ACCESS_KEY_ID: your-access-key
+      AWS_SECRET_ACCESS_KEY: your-secret-key
+      # AWS_DEFAULT_REGION: us-east-1
+      # Other Restic/rclone backend variables can also be passed through.
+
+      # Custom S3-compatible backend example, for example Hetzner Object Storage.
+      # Restic expects the endpoint in the repository URL for non-AWS S3 backends.
+      # Adjust the bucket, path, region, and endpoint for your provider.
+      # BIVAC_TARGET_URL: s3:https://fsn1.your-objectstorage.com/your-bucket/bivac
+      # AWS_ACCESS_KEY_ID: your-hetzner-access-key
+      # AWS_SECRET_ACCESS_KEY: your-hetzner-secret-key
+      # AWS_DEFAULT_REGION: fsn1
+      # Other Restic/rclone backend variables can also be passed through.
+
+  bivac-local:
+    image: ghcr.io/jusito/bivac:latest
+    command: manager
+    profiles: ["local"]
+    ports:
+      - "8182:8182"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./backups:/backup
+    environment:
+      BIVAC_ORCHESTRATOR: docker
+      BIVAC_TARGET_URL: /backup
+      RESTIC_PASSWORD: change-me
+      BIVAC_SERVER_PSK: change-me-too
+      # The local Restic target must be mounted into the manager. Docker agents inherit
+      # manager mounts, which makes /backup available during the temporary agent run.

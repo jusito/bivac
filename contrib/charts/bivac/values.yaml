@@ -1,6 +1,6 @@
 image:
-  repository: camptocamp/bivac
-  tag: "2.4"
+  repository: ghcr.io/jusito/bivac
+  tag: latest
   pullPolicy: IfNotPresent
 
 annotations:
