@@ -2,9 +2,9 @@ name: Integration tests - Docker
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   integration-tests-docker-raw:
