@@ -1,45 +1,37 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 
-(
-    IMAGE_NAME="${1:?"Please provide image name as first argument"}"
-    BIVAC_VERSION="${2:?"Please provide bivac version as first argument"}"
-    GO_VERSION="${3:?"Please provide Go version as third argument"}"
-    RCLONE_VERSION="${4:?"Please provide Rclone version as fourth argument"}"
-    RESTIC_VERSION="${5:?"Please provide Restic version as fifth argument"}"
+IMAGE_NAME="${1:?"Please provide image name as first argument"}"
+GO_VERSION="${2:?"Please provide Go version as second argument"}"
+RCLONE_VERSION="${3:?"Please provide Rclone version as third argument"}"
+RESTIC_VERSION="${4:?"Please provide Restic version as fourth argument"}"
+shift 4
 
-    configurations=(
-        "GOOS=linux:GOARCH=amd64"
-        "GOOS=linux:GOARCH=386"
-        "GOOS=linux:GOARCH=arm:GOARM=7"
-        "GOOS=linux:GOARCH=arm64:GOARM=7"
-    )
-    baseimage_configs=(
-        # "debian:bookworm-slim|-bookworm-slim"
-        "alpine:3.23|-alpine"
-    )
+if [ "$#" -eq 0 ]; then
+    echo "Please provide at least one image tag." >&2
+    exit 1
+fi
 
-    cd "$(dirname "$0")/.."
-    merged_name="${IMAGE_NAME}:${BIVAC_VERSION}${baseimage_tag_suffix}"
-    echo docker manifest create "$merged_name" "${successfull[@]}"
+primary_tag="$1"
+platforms="linux/amd64,linux/arm64,linux/arm/v7"
+tags=()
 
-    for image in "${successfull[@]}"; do
-        os_start=$((${#IMAGE_NAME}+1+${#BIVAC_VERSION}+1))
-        os="${image:$os_start}"
-        os="${os/-*}"
-        arch_start=$((os_start+${#os}+1))
-        arch="${image:$arch_start}"
-        arch="${arch/-*}"
-        cmd=(docker manifest annotate "$merged_name" "$image" --os "$os" --arch "$arch")
-        echo "${cmd[@]}"
-        if "${cmd[@]}"; then
-            echo "$image" >> .local/successfull.log
-            # docker push "$current_image"
-        else
-            echo "$image" >> .local/failed.log
-            # errors+=("${cmd[*]}")
-        fi
-    done
-    docker manifest push "$merged_name"
-)
+for tag in "$@"; do
+    tags+=("-t" "${IMAGE_NAME}:${tag}")
+done
+
+cd "$(dirname "$0")/.."
+
+docker buildx build \
+    --push \
+    --pull \
+    --platform "$platforms" \
+    --build-arg "VERSION=${primary_tag}" \
+    --build-arg "RCLONE_VERSION=${RCLONE_VERSION}" \
+    --build-arg "RESTIC_VERSION=${RESTIC_VERSION}" \
+    --build-arg "GO_VERSION=${GO_VERSION}" \
+    "${tags[@]}" \
+    .
+
+echo "successfully pushed ${IMAGE_NAME} tags: $*"

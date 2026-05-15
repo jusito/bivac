@@ -1,26 +1,20 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-if [ -z "$GO_VERSION" ]; then
-  GO_VERSION=latest
+set -euo pipefail
+
+IMAGE_NAME="${1:?"Please provide image name as first argument"}"
+GO_VERSION="${2:?"Please provide Go version as second argument"}"
+RCLONE_VERSION="${3:?"Please provide Rclone version as third argument"}"
+RESTIC_VERSION="${4:?"Please provide Restic version as fourth argument"}"
+BIVAC_VERSION="${5:?"Please provide Bivac version as fifth argument"}"
+
+tags=("$BIVAC_VERSION")
+
+if [[ "$BIVAC_VERSION" =~ ^v?([0-9]+)\.([0-9]+)\.[0-9]+$ ]]; then
+    tags+=("${BASH_REMATCH[1]}.${BASH_REMATCH[2]}")
+    tags+=("${BASH_REMATCH[1]}")
 fi
 
-docker pull "golang:$GO_VERSION"
+cd "$(dirname "$0")/.."
 
-VERSION=$(git describe --always --dirty)
-
-PLATFORMS=(darwin linux windows)
-ARCHITECTURES=(386 amd64)
-
-mkdir -p release
-
-for platform in "${PLATFORMS[@]}"; do
-  for arch in "${ARCHITECTURES[@]}"; do
-    rm -f bivac
-    docker run -it --rm -w "/go/src/github.com/camptocamp/bivac" -v "$(pwd):/go/src/github.com/camptocamp/bivac" \
-      -e "GOOS=${platform}" \
-      -e "GOARCH=${arch}" \
-      "golang:$GO_VERSION" make bivac
-    sha256sum bivac >> release/SHA256SUM.txt
-    zip "release/bivac_${VERSION}_${platform}_${arch}.zip" bivac
-  done
-done
+scripts/push-docker.sh "$IMAGE_NAME" "$GO_VERSION" "$RCLONE_VERSION" "$RESTIC_VERSION" "${tags[@]}"

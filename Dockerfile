@@ -7,20 +7,22 @@ RUN set -eux; \
     apk add --no-cache git make; \
     git config --global advice.detachedHead false
 
-ARG GOOS=linux
-ARG GOARCH=amd64
-ARG GOARM=7
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+ARG TARGETVARIANT=
+ARG GOOS
+ARG GOARCH
+ARG GOARM
+ARG VERSION
 
 ENV GO111MODULE=on
-ENV GOOS=${GOOS}
-ENV GOARCH=${GOARCH}
-ENV GOARM=${GOARM}
 
 # Rclone
 ARG RCLONE_VERSION
 WORKDIR /go/src/github.com/rclone/rclone
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
+    export GOOS="${GOOS:-$TARGETOS}" GOARCH="${GOARCH:-$TARGETARCH}" GOARM="${GOARM:-${TARGETVARIANT#v}}"; \
     build_rclone.sh "$RCLONE_VERSION" "$(date +"%y.%m.%d-%T")"
 
 # Restic
@@ -28,12 +30,14 @@ WORKDIR /go/src/github.com/restic/restic
 ARG RESTIC_VERSION
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
+    export GOOS="${GOOS:-$TARGETOS}" GOARCH="${GOARCH:-$TARGETARCH}" GOARM="${GOARM:-${TARGETVARIANT#v}}"; \
     build_restic.sh "$RESTIC_VERSION" "$(date +"%y.%m.%d-%T")"
 
 # Bivac
 WORKDIR /go/src/github.com/camptocamp/bivac
 COPY . .
-RUN make bivac
+RUN export GOOS="${GOOS:-$TARGETOS}" GOARCH="${GOARCH:-$TARGETARCH}" GOARM="${GOARM:-${TARGETVARIANT#v}}"; \
+    if [ -n "$VERSION" ]; then make bivac VERSION="$VERSION"; else make bivac; fi
 
 FROM "alpine:$ALPINE_VERSION"
 RUN set -eux; \
