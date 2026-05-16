@@ -103,7 +103,5 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          short_sha="${GITHUB_SHA::7}"
-          make docker-push \
-            IMAGE_NAME="${IMAGE_NAME}" \
-            IMAGE_TAGS="latest sha-${short_sha}"
+          make docker-release \
+            IMAGE_NAME="${IMAGE_NAME}"
