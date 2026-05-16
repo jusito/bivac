@@ -3,7 +3,7 @@ package orchestrators
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -239,7 +239,7 @@ func TestDockerDeployAgentSuccess(t *testing.T) {
 		ShowStderr: true,
 		Details:    true,
 		Follow:     true,
-	}).Return(ioutil.NopCloser(bytes.NewReader([]byte("foo"))), nil).Times(1)
+	}).Return(io.NopCloser(bytes.NewReader([]byte("foo"))), nil).Times(1)
 
 	// Run test
 	o := &DockerOrchestrator{
@@ -283,7 +283,7 @@ func TestDockerPullImageSuccessPull(t *testing.T) {
 	fakeImage := "camptocamp/bivac:fake"
 
 	mockDocker.EXPECT().ImageInspectWithRaw(context.Background(), fakeImage).Return(types.ImageInspect{}, make([]byte, 0), fmt.Errorf("random error")).Times(1)
-	mockDocker.EXPECT().ImagePull(context.Background(), fakeImage, types.ImagePullOptions{}).Return(ioutil.NopCloser(strings.NewReader("foo")), nil).Times(1)
+	mockDocker.EXPECT().ImagePull(context.Background(), fakeImage, types.ImagePullOptions{}).Return(io.NopCloser(strings.NewReader("foo")), nil).Times(1)
 
 	// Run test
 	o := &DockerOrchestrator{
@@ -302,7 +302,7 @@ func TestDockerPullImageFailToPull(t *testing.T) {
 	fakeImage := "camptocamp/bivac:fake"
 
 	mockDocker.EXPECT().ImageInspectWithRaw(context.Background(), fakeImage).Return(types.ImageInspect{}, make([]byte, 0), fmt.Errorf("random error")).Times(1)
-	mockDocker.EXPECT().ImagePull(context.Background(), fakeImage, types.ImagePullOptions{}).Return(ioutil.NopCloser(strings.NewReader("foo")), fmt.Errorf("error")).Times(1)
+	mockDocker.EXPECT().ImagePull(context.Background(), fakeImage, types.ImagePullOptions{}).Return(io.NopCloser(strings.NewReader("foo")), fmt.Errorf("error")).Times(1)
 
 	// Run test
 	o := &DockerOrchestrator{

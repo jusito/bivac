@@ -3,7 +3,7 @@ package orchestrators
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"sort"
 	"strings"
@@ -182,7 +182,7 @@ func (o *DockerOrchestrator) DeployAgent(image string, cmd []string, envs []stri
 
 	defer body.Close()
 	stdout := new(bytes.Buffer)
-	_, err = stdcopy.StdCopy(stdout, ioutil.Discard, body)
+	_, err = stdcopy.StdCopy(stdout, io.Discard, body)
 	if err != nil {
 		err = fmt.Errorf("failed to read logs from response: %s", err)
 		return
@@ -221,10 +221,7 @@ func DetectDocker(config *DockerConfig) bool {
 		return false
 	}
 	_, err = client.Ping(context.Background())
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 // PullImage pulls a Docker image
@@ -236,7 +233,7 @@ func (o *DockerOrchestrator) PullImage(image string) (err error) {
 		}
 		defer resp.Close()
 
-		_, err = ioutil.ReadAll(resp)
+		_, err = io.ReadAll(resp)
 		if err != nil {
 			err = fmt.Errorf("failed to read ImagePull response: %s", err)
 			return err
@@ -294,7 +291,7 @@ func (o *DockerOrchestrator) ContainerExec(mountedVolumes *volume.MountedVolume,
 	}
 
 	stdoutput := new(bytes.Buffer)
-	stdcopy.StdCopy(stdoutput, ioutil.Discard, conn.Reader)
+	stdcopy.StdCopy(stdoutput, io.Discard, conn.Reader)
 
 	stdout = stdoutput.String()
 	return
@@ -309,6 +306,8 @@ func (o *DockerOrchestrator) IsNodeAvailable(hostID string) (ok bool, err error)
 
 // RetrieveOrphanAgents returns the list of orphan Bivac agents
 func (o *DockerOrchestrator) RetrieveOrphanAgents() (containers map[string]string, err error) {
+	containers = make(map[string]string)
+
 	c, err := o.client.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
 		err = fmt.Errorf("failed to list containers: %s", err)
@@ -373,7 +372,7 @@ func (o *DockerOrchestrator) AttachOrphanAgent(containerID, namespace string) (s
 
 	defer body.Close()
 	stdout := new(bytes.Buffer)
-	_, err = stdcopy.StdCopy(stdout, ioutil.Discard, body)
+	_, err = stdcopy.StdCopy(stdout, io.Discard, body)
 	if err != nil {
 		err = fmt.Errorf("failed to read logs from response: %s", err)
 		return

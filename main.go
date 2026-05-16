@@ -9,7 +9,6 @@ import (
 )
 
 var (
-	exitCode  int
 	buildInfo utils.BuildInfo
 
 	// Following variables are filled in by the build script

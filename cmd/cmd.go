@@ -71,5 +71,4 @@ func SetValuesFromEnv(envs map[string]string, flags *pflag.FlagSet) {
 			os.Setenv(env, flag.Value.String())
 		}
 	}
-	return
 }

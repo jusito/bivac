@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 
@@ -46,7 +46,7 @@ func Backup(targetURL, backupPath, hostname string, force bool, logReceiver stri
 		}
 		defer resp.Body.Close()
 
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Errorf("failed to read body: %s\n", err)
 			return
@@ -59,7 +59,6 @@ func Backup(targetURL, backupPath, hostname string, force bool, logReceiver stri
 	}
 
 	fmt.Println(base64.StdEncoding.EncodeToString([]byte(output)))
-	return
 }
 
 // Restore runs Restic commands to restore backed up data to a new volume
@@ -104,7 +103,7 @@ func Restore(
 			return
 		}
 		defer resp.Body.Close()
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Errorf("failed to read body: %s\n", err)
 			return
@@ -116,5 +115,4 @@ func Restore(
 	}
 
 	fmt.Println(base64.StdEncoding.EncodeToString([]byte(output)))
-	return
 }

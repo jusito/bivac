@@ -125,5 +125,4 @@ func (m *Manager) updateRestoreLogs(v *volume.Volume, agentOutput utils.MsgForma
 	}
 	v.LastBackupDate = time.Now().Format("2006-01-02 15:04:05")
 	v.Metrics.LastBackupDate.SetToCurrentTime()
-	return
 }

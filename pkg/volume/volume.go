@@ -103,8 +103,6 @@ func (v *Volume) SetupMetrics() {
 			"hostname":    v.Hostname,
 		},
 	})
-
-	return
 }
 
 // CleanupMetrics cleans up volume's metrics
@@ -113,5 +111,4 @@ func (v *Volume) CleanupMetrics() {
 	prometheus.Unregister(v.Metrics.LastBackupStatus)
 	prometheus.Unregister(v.Metrics.OldestBackupDate)
 	prometheus.Unregister(v.Metrics.BackupCount)
-	return
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -205,7 +204,7 @@ func (r *Engine) restoreVolume(
 		)...,
 	).CombinedOutput()
 	restoreDumpPath := workingPath + origionalBackupPath
-	files, err := ioutil.ReadDir(restoreDumpPath)
+	files, err := os.ReadDir(restoreDumpPath)
 	if err != nil {
 		rc = utils.HandleExitCode(err)
 	}
@@ -292,7 +291,7 @@ func (r *Engine) getOrigionalBackupPath(
 	headerJSON := []byte("{\"paths\": [\"\"]")
 	jsons := strings.Split(string(output), "\n")
 	for i := 0; i < len(jsons); i++ {
-		if strings.Index(jsons[i], "\",\"paths\":[\"") > -1 {
+		if strings.Contains(jsons[i], "\",\"paths\":[\"") {
 			headerJSON = []byte(jsons[i])
 			break
 		}

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
@@ -17,6 +16,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/camptocamp/bivac/pkg/volume"
 	"github.com/rancher/go-rancher-metadata/metadata"
 	"github.com/rancher/go-rancher/v2"
@@ -187,7 +187,7 @@ func (o *CattleOrchestrator) DeployAgent(image string, cmd []string, envs []stri
 		// This workaround is awful but it's the only way to know if the container failed.
 		if container.State == "stopped" {
 			if container.StartCount == 1 {
-				if stopped == false {
+				if !stopped {
 					stopped = true
 					time.Sleep(5 * time.Second)
 				} else {
@@ -261,21 +261,20 @@ func (o *CattleOrchestrator) DeployAgent(image string, cmd []string, envs []stri
 func (o *CattleOrchestrator) RemoveContainer(container *client.Container) {
 	err := o.client.Container.Delete(container)
 	if err != nil {
-		err = fmt.Errorf("failed to remove container: %s", err)
+		log.Errorf("failed to remove container: %s", err)
 		return
 	}
 	removed := false
 	for !removed {
 		container, err := o.client.Container.ById(container.Id)
 		if err != nil {
-			err = fmt.Errorf("failed to inspect container: %s", err)
+			log.Errorf("failed to inspect container: %s", err)
 			return
 		}
 		if container.Removed != "" {
 			removed = true
 		}
 	}
-	return
 }
 
 // GetContainersMountingVolume returns containers mounting a volume
@@ -369,10 +368,7 @@ func (o *CattleOrchestrator) IsNodeAvailable(hostID string) (ok bool, err error)
 // DetectCattle returns true if the Bivac is running on the orchestrator Cattle
 func DetectCattle() bool {
 	_, err := net.LookupHost("rancher-metadata")
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 // RetrieveOrphanAgents returns the list of orphan Bivac agents
@@ -424,7 +420,7 @@ func (o *CattleOrchestrator) AttachOrphanAgent(containerID, namespace string) (s
 		// This workaround is awful but it's the only way to know if the container failed.
 		if container.State == "stopped" {
 			if container.StartCount == 1 {
-				if stopped == false {
+				if !stopped {
 					stopped = true
 					time.Sleep(5 * time.Second)
 				} else {
@@ -537,7 +533,7 @@ func (o *CattleOrchestrator) rawAPICall(method, endpoint string, data string, ob
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		err = fmt.Errorf("failed to read response from rancher: %s", err)
 		return

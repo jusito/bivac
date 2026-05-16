@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/camptocamp/bivac/pkg/volume"
 	"github.com/jinzhu/copier"
 	apiv1 "k8s.io/api/core/v1"
@@ -297,13 +298,12 @@ func (o *KubernetesOrchestrator) DeployAgent(image string, cmd, envs []string, v
 func (o *KubernetesOrchestrator) DeletePod(name, namespace string) {
 	err := o.client.CoreV1().Pods(namespace).Delete(name, &metav1.DeleteOptions{})
 	if err != nil {
-		err = fmt.Errorf("failed to delete agent: %s", err)
+		log.Errorf("failed to delete agent: %s", err)
 	}
-	return
 }
 
 // GetContainersMountingVolume returns containers mounting a volume
-func (o *KubernetesOrchestrator) GetContainersMountingVolume(v *volume.Volume) (containers []*volume.MountedVolume, er error) {
+func (o *KubernetesOrchestrator) GetContainersMountingVolume(v *volume.Volume) (containers []*volume.MountedVolume, err error) {
 	pods, err := o.client.CoreV1().Pods(v.Namespace).List(metav1.ListOptions{})
 	if err != nil {
 		err = fmt.Errorf("failed to get pods: %s", err)
@@ -520,10 +520,7 @@ func (o *KubernetesOrchestrator) blacklistedVolume(vol *volume.Volume, volumeFil
 // DetectKubernetes returns true if Bivac is running on the orchestrator Kubernetes
 func DetectKubernetes() bool {
 	_, err := rest.InClusterConfig()
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func (o *KubernetesOrchestrator) getConfig() (config *rest.Config, err error) {
@@ -548,7 +545,7 @@ func (o *KubernetesOrchestrator) getConfig() (config *rest.Config, err error) {
 }
 
 func (o *KubernetesOrchestrator) getNamespaces() (namespaces []string, err error) {
-	if o.config.AllNamespaces == true {
+	if o.config.AllNamespaces {
 		nms, err := o.client.CoreV1().Namespaces().List(metav1.ListOptions{})
 		if err != nil {
 			err = fmt.Errorf("failed to retrieve the list of namespaces: %s", err)
