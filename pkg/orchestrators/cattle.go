@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
@@ -187,7 +186,7 @@ func (o *CattleOrchestrator) DeployAgent(image string, cmd []string, envs []stri
 		// This workaround is awful but it's the only way to know if the container failed.
 		if container.State == "stopped" {
 			if container.StartCount == 1 {
-				if stopped == false {
+				if !stopped {
 					stopped = true
 					time.Sleep(5 * time.Second)
 				} else {
@@ -275,7 +274,6 @@ func (o *CattleOrchestrator) RemoveContainer(container *client.Container) {
 			removed = true
 		}
 	}
-	return
 }
 
 // GetContainersMountingVolume returns containers mounting a volume
@@ -369,10 +367,7 @@ func (o *CattleOrchestrator) IsNodeAvailable(hostID string) (ok bool, err error)
 // DetectCattle returns true if the Bivac is running on the orchestrator Cattle
 func DetectCattle() bool {
 	_, err := net.LookupHost("rancher-metadata")
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 // RetrieveOrphanAgents returns the list of orphan Bivac agents
@@ -424,7 +419,7 @@ func (o *CattleOrchestrator) AttachOrphanAgent(containerID, namespace string) (s
 		// This workaround is awful but it's the only way to know if the container failed.
 		if container.State == "stopped" {
 			if container.StartCount == 1 {
-				if stopped == false {
+				if !stopped {
 					stopped = true
 					time.Sleep(5 * time.Second)
 				} else {
@@ -537,7 +532,7 @@ func (o *CattleOrchestrator) rawAPICall(method, endpoint string, data string, ob
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		err = fmt.Errorf("failed to read response from rancher: %s", err)
 		return

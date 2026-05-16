@@ -62,7 +62,6 @@ func (m *Manager) getVolumes(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(b)
-	return
 }
 
 func (m *Manager) backupVolume(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +80,6 @@ func (m *Manager) backupVolume(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"type": "success"}`))
-	return
 }
 
 func (m *Manager) restoreVolume(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +101,6 @@ func (m *Manager) restoreVolume(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"type": "success"}`))
-	return
 }
 
 func (m *Manager) info(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +115,6 @@ func (m *Manager) info(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(encodedData))
-	return
 }
 
 func (m *Manager) getBackupLogs(w http.ResponseWriter, r *http.Request) {
@@ -145,7 +141,6 @@ func (m *Manager) getBackupLogs(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("404 - Volume not found"))
-	return
 }
 
 func (m *Manager) runRawCommand(w http.ResponseWriter, r *http.Request) {
@@ -177,12 +172,10 @@ func (m *Manager) runRawCommand(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(encodedData))
-	return
 }
 func (m *Manager) ping(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"type":"pong"}`))
-	return
 }
 
 func setupMetrics(buildInfo utils.BuildInfo) {

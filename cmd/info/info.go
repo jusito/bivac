@@ -38,9 +38,16 @@ var infoCmd = &cobra.Command{
 			if infok == "volumes_count" {
 				infok = "Managed volumes"
 			}
-			fmt.Printf("%s: %s\n", strings.Title(infok), infov)
+			fmt.Printf("%s: %s\n", title(infok), infov)
 		}
 	},
+}
+
+func title(s string) string {
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }
 
 func init() {

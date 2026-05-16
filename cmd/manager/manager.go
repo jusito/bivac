@@ -21,7 +21,6 @@ var (
 	// configuration from Cobra variables
 	Orchestrators manager.Orchestrators
 
-	dbPath           string
 	resticForgetArgs string
 
 	providersFile       string

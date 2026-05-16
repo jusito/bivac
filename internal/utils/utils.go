@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -213,11 +212,11 @@ func copyFileContents(sourcePath string, targetPath string) error {
 	if err != nil {
 		return err
 	}
-	sourceData, err := ioutil.ReadFile(sourcePath)
+	sourceData, err := os.ReadFile(sourcePath)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(targetPath, sourceData, sourceFInfo.Mode())
+	err = os.WriteFile(targetPath, sourceData, sourceFInfo.Mode())
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return err

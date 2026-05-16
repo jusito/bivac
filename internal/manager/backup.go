@@ -184,7 +184,6 @@ func (m *Manager) attachOrphanAgent(containerID string, v *volume.Volume) {
 			}).Warningf("failed to run post-command: %s", err)
 		}
 	}
-	return
 }
 
 func (m *Manager) updateBackupLogs(v *volume.Volume, agentOutput utils.MsgFormat) {
@@ -215,7 +214,6 @@ func (m *Manager) updateBackupLogs(v *volume.Volume, agentOutput utils.MsgFormat
 	}
 
 	v.LastBackupDate = time.Now().UTC().Format("2006-01-02 15:04:05")
-	return
 }
 
 func (m *Manager) setOldestBackupDate(v *volume.Volume) (err error) {
