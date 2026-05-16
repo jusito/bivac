@@ -37,4 +37,5 @@ docker buildx build \
     -t "$image" \
     .
 
-echo "successfully built $image"
+echo "successfully built $image" >&2
+echo "$image"

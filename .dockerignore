@@ -4,5 +4,6 @@ contrib
 hooks
 img
 test
+**/logs/
 *.md
 vendor

@@ -1,62 +1,101 @@
-version: '3.3'
-services:
-  minio:
-    image: minio/minio
-    environment:
-      MINIO_ACCESS_KEY: the_access_key
-      MINIO_SECRET_KEY: the_secret_key
-    command: server /data/minio
-    ports:
-      - "9000:9000"
+# Important: Its expected to be used via: make integration-test
 
-  bivac:
-    image: bivac-testing
-    command: manager
-    ports:
-      - "8182:8182"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - ./:/data
+name: bivac_integration_test
+
+services:
+  s3:
+    image: chrislusf/seaweedfs:4.23
     environment:
-      BIVAC_LOG_LEVEL: debug
       AWS_ACCESS_KEY_ID: the_access_key
       AWS_SECRET_ACCESS_KEY: the_secret_key
-      BIVAC_TARGET_URL: ${BIVAC_TARGET_URL}
+      S3_BUCKET: testing
+    command: server -s3
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:9333"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  bivac:
+    image: localhost/bivac-testing:latest
+    command: manager
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      BIVAC_LOG_LEVEL: debug
+      BIVAC_ORCHESTRATOR: docker
+      BIVAC_DOCKER_NETWORK: bivac_integration_test_default
+      AWS_ACCESS_KEY_ID: the_access_key
+      AWS_SECRET_ACCESS_KEY: the_secret_key
+      BIVAC_TARGET_URL: s3:http://s3:8333/testing
       RESTIC_PASSWORD: foo
       BIVAC_SERVER_PSK: foo
-      BIVAC_AGENT_IMAGE: bivac-testing
+      BIVAC_AGENT_IMAGE: localhost/bivac-testing:latest
+    healthcheck:
+      test: ["CMD", "bivac", "info", "--server.psk", "foo"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   raw:
     image: ubuntu
     command: tail -F anything
     volumes:
       - raw_data:/data
-    restart: always
 
   mysql:
     image: mysql
     volumes:
       - mysql_data:/var/lib/mysql
-    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: bivac
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -prootpassword --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   postgres:
-    image: postgres
+    image: postgres:17
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: always
     environment:
       POSTGRES_PASSWORD: bivac
       POSTGRES_DB: bivac
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bivac"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
-  restic:
-    image: restic/restic
+  integration-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.integration-test
+    depends_on:
+      s3:
+        condition: service_healthy
+      bivac:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      raw:
+        condition: service_started
+    working_dir: /integration
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/integration:ro
+      - raw_data:/mnt/raw_data
+      - mysql_data:/mnt/mysql_data
+      - postgres_data:/mnt/postgres_data
     environment:
       RESTIC_PASSWORD: foo
       AWS_ACCESS_KEY_ID: the_access_key
       AWS_SECRET_ACCESS_KEY: the_secret_key
+    command: ["/bin/sh", "-c", ". /integration/tests/api.sh; create_s3_bucket; for test in /integration/tests/*.sh; do echo \"Running $$test\"; \"$$test\"; done"]
 
 volumes:
   mysql_data: {}

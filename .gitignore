@@ -11,3 +11,4 @@ release/
 .local
 vendor
 **/.images.list
+/test/integration/docker/logs/
