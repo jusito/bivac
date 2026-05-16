@@ -16,6 +16,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/camptocamp/bivac/pkg/volume"
 	"github.com/rancher/go-rancher-metadata/metadata"
 	"github.com/rancher/go-rancher/v2"
@@ -260,14 +261,14 @@ func (o *CattleOrchestrator) DeployAgent(image string, cmd []string, envs []stri
 func (o *CattleOrchestrator) RemoveContainer(container *client.Container) {
 	err := o.client.Container.Delete(container)
 	if err != nil {
-		err = fmt.Errorf("failed to remove container: %s", err)
+		log.Errorf("failed to remove container: %s", err)
 		return
 	}
 	removed := false
 	for !removed {
 		container, err := o.client.Container.ById(container.Id)
 		if err != nil {
-			err = fmt.Errorf("failed to inspect container: %s", err)
+			log.Errorf("failed to inspect container: %s", err)
 			return
 		}
 		if container.Removed != "" {

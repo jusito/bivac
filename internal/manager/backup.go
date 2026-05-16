@@ -16,6 +16,8 @@ import (
 	"github.com/camptocamp/bivac/pkg/volume"
 )
 
+var oldestBackupDateRegexp = regexp.MustCompile(`\S{3} (.*)`)
+
 func backupVolume(m *Manager, v *volume.Volume, force bool) (err error) {
 
 	v.BackingUp = true
@@ -36,7 +38,10 @@ func backupVolume(m *Manager, v *volume.Volume, force bool) (err error) {
 
 	p, err := m.Providers.GetProvider(m.Orchestrator, v)
 	if err != nil {
-		err = fmt.Errorf("failed to get provider: %s", err)
+		log.WithFields(log.Fields{
+			"volume":   v.Name,
+			"hostname": v.Hostname,
+		}).Errorf("failed to get provider: %s", err)
 		return
 	}
 
@@ -217,9 +222,7 @@ func (m *Manager) updateBackupLogs(v *volume.Volume, agentOutput utils.MsgFormat
 }
 
 func (m *Manager) setOldestBackupDate(v *volume.Volume) (err error) {
-	r, err := regexp.Compile(`\S{3} (.*)`)
-
-	matches := r.FindStringSubmatch(v.Logs["snapshots"])
+	matches := oldestBackupDateRegexp.FindStringSubmatch(v.Logs["snapshots"])
 
 	stdout := ""
 
